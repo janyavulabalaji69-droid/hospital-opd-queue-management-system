@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reception Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Reception Dashboard</h1>
+
+        <p>Register Patient and Generate Token</p>
+
+        <form action="/add_patient" method="POST">
+
+            <!-- Patient Name -->
+            <label>Patient Name</label>
+            <br>
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Enter patient name"
+                required
+            >
+
+            <br><br>
+
+
+            <!-- Age -->
+            <label>Age</label>
+            <br>
+
+            <input
+                type="number"
+                name="age"
+                placeholder="Enter age"
+                required
+            >
+
+            <br><br>
+
+
+            <!-- Phone -->
+            <label>Phone Number</label>
+            <br>
+
+            <input
+                type="text"
+                name="phone"
+                placeholder="Enter phone number"
+                required
+            >
+
+            <br><br>
+
+
+            <!-- Doctor -->
+            <label>Select Doctor</label>
+            <br>
+
+            <select name="doctor" required>
+
+                <option value="">Select Doctor</option>
+
+                {% for doctor in doctors %}
+
+                    {% if doctor["available"] == 1 %}
+
+                        <option value="{{ doctor['id'] }}">
+                            {{ doctor['name'] }} - {{ doctor['department'] }} - 🟢 Available
+                        </option>
+
+                    {% else %}
+
+                        <option value="{{ doctor['id'] }}" disabled>
+                            {{ doctor['name'] }} - {{ doctor['department'] }} - 🔴 Unavailable
+                        </option>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </select>
+
+            <br><br>
+
+
+            <!-- Patient Type -->
+            <label>Patient Type</label>
+            <br>
+
+            <select name="emergency" required>
+
+                <option value="0">
+                    Normal
+                </option>
+
+                <option value="1">
+                    🚨 Emergency
+                </option>
+
+            </select>
+
+            <br><br>
+
+
+            <!-- Generate Token -->
+            <button type="submit">
+                Generate Token
+            </button>
+
+        </form>
+
+        <!-- Patient Reassignment Section -->
+
+        <hr>
+
+        <h2>Patients Needing Reassignment</h2>
+
+        {% if reassignment_patients %}
+
+            <table border="1" cellpadding="10" style="margin: auto;">
+
+                <tr>
+                    <th>Token</th>
+                    <th>Patient Name</th>
+                    <th>Current Doctor</th>
+                    <th>Department</th>
+                    <th>Reassign To</th>
+                    <th>Action</th>
+                </tr>
+
+                {% for patient in reassignment_patients %}
+
+                <tr>
+
+                    <td>
+                        {{ patient["token_number"] }}
+                    </td>
+
+                    <td>
+                        {{ patient["patient_name"] }}
+                    </td>
+
+                    <td>
+                        {{ patient["doctor_name"] }}
+                    </td>
+
+                    <td>
+                        {{ patient["department"] }}
+                    </td>
+
+                    <td>
+
+                        <form
+                            action="/reassign_patient/{{ patient['id'] }}"
+                            method="POST"
+                        >
+
+                            <select name="new_doctor" required>
+
+                                <option value="">
+                                    Select Doctor
+                                </option>
+
+                                {% for doctor in doctors %}
+
+                                    {% if doctor["available"] == 1 %}
+
+                                        <option value="{{ doctor['id'] }}">
+
+                                            {{ doctor['name'] }}
+                                            -
+                                            {{ doctor['department'] }}
+
+                                        </option>
+
+                                    {% endif %}
+
+                                {% endfor %}
+
+                            </select>
+
+                    </td>
+
+                    <td>
+
+                            <button type="submit">
+                                Reassign Patient
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </table>
+
+        {% else %}
+
+            <p>
+                No patients need reassignment.
+            </p>
+
+        {% endif %}
+
+        <br>
+
+        <br>
+
+        <!-- Back to Home -->
+        <button onclick="window.location.href='/'">
+            Back to Home
+        </button>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Live Queue Display</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Automatically refresh page every 5 seconds -->
+    <meta http-equiv="refresh" content="5">
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <h1>Hospital OPD Live Queue</h1>
+
+        <hr>
+
+        <!-- Doctor Selection -->
+
+        <label for="doctor">
+            <strong>Select Doctor:</strong>
+        </label>
+
+        <br><br>
+
+        <select id="doctor"
+                onchange="selectDoctor()">
+
+            <option value="">
+                -- Select Doctor --
+            </option>
+
+            {% for doctor in doctors %}
+
+                <option value="{{ doctor['id'] }}"
+                
+                {% if selected_doctor == doctor['id'] %}
+                    selected
+                {% endif %}
+                
+                >
+
+                    {{ doctor['name'] }}
+                    -
+                    {{ doctor['department'] }}
+
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+
+        {% if selected_doctor %}
+
+            <br><br>
+
+            <h2>
+                {{ doctor_name }}
+            </h2>
+
+            <p>
+                Department: {{ department }}
+            </p>
+
+            <hr>
+
+
+            <!-- CURRENT PATIENT -->
+
+            <h2>🔔 Now Serving</h2>
+
+            {% if current_patient %}
+
+                <div style="
+                    border: 3px solid #3498db;
+                    padding: 30px;
+                    margin: 20px auto;
+                    max-width: 500px;
+                ">
+
+                    <h1>
+                        Token
+                        {{ current_patient["token_number"] }}
+                    </h1>
+
+                    <h2>
+                        {{ current_patient["patient_name"] }}
+                    </h2>
+
+                    {% if current_patient["emergency"] == 1 %}
+
+                        <h3>
+                            🚨 EMERGENCY
+                        </h3>
+
+                    {% else %}
+
+                        <h3>
+                            Normal Patient
+                        </h3>
+
+                    {% endif %}
+
+
+                    {% if current_patient["status"] == "CALLED" %}
+
+                        <p>
+                            📢 Patient Called
+                        </p>
+
+                    {% elif current_patient["status"] == "IN_PROGRESS" %}
+
+                        <p>
+                            🩺 Consultation In Progress
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            {% else %}
+
+                <div style="
+                    border: 2px solid #999;
+                    padding: 30px;
+                    margin: 20px auto;
+                    max-width: 500px;
+                ">
+
+                    <h2>
+                        No patient is currently being served.
+                    </h2>
+
+                    <p>
+                        Please wait for the next patient.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+            <hr>
+
+
+            <!-- AUTO REFRESH MESSAGE -->
+
+            <p>
+                🔄 Queue updates automatically every 5 seconds.
+            </p>
+
+
+        {% else %}
+
+            <br><br>
+
+            <h2>
+                Please select a doctor to view the live queue.
+            </h2>
+
+        {% endif %}
+
+
+        <br>
+
+        <button onclick="window.location.href='/'">
+            Back to Home
+        </button>
+
+
+    </div>
+
+
+    <script>
+
+        function selectDoctor() {
+
+            const doctorId =
+                document.getElementById("doctor").value;
+
+            if (doctorId) {
+
+                window.location.href =
+                    "/live_queue/" + doctorId;
+
+            }
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hospital OPD Queue Management</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Hospital OPD Queue Management System</h1>
+
+        <p>Welcome to the Hospital OPD Token and Queue Management System</p>
+
+        <div class="buttons">
+
+            <button onclick="window.location.href='/reception'">
+                Reception
+            </button>
+
+            <button onclick="window.location.href='/doctor/1'">
+                Doctor Dashboard
+            </button>
+
+            <button onclick="window.location.href='/live_queue/1'">
+               Live Queue Display
+            </button>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
