@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,244 +14,225 @@
 
 <body>
 
-    <div class="container">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <script>
+                alert("{{ message }}");
+            </script>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="container doctor-container">
 
         <h1>Doctor Dashboard</h1>
 
+        <p>Manage Consultations and Patient Queue</p>
+
         <!-- Doctor Selection -->
-        <label for="doctor">Select Doctor:</label>
+        <div class="doctor-selection">
+            <label for="doctor">Select Doctor</label>
 
-        <select id="doctor" onchange="selectDoctor()">
+            <select id="doctor" onchange="selectDoctor()">
 
-            <option value="">-- Select Doctor --</option>
+                <option value="">-- Select Doctor --</option>
 
-            {% for doctor in doctors %}
+                {% for doctor in doctors %}
 
-            <option value="{{ doctor['id'] }}"
-                {% if selected_doctor == doctor['id'] %}selected{% endif %}>
+                    <option value="{{ doctor['id'] }}"
+                        {% if selected_doctor == doctor['id'] %}selected{% endif %}>
 
-                {{ doctor['name'] }} - {{ doctor['department'] }}
+                        {{ doctor['name'] }} - {{ doctor['department'] }}
 
-                {% if doctor['available'] == 1 %}
-                    - Available
-                {% else %}
-                    - Unavailable
-                {% endif %}
+                        {% if doctor['available'] == 1 %}
+                            - Available
+                        {% else %}
+                            - Unavailable
+                        {% endif %}
 
-            </option>
+                    </option>
 
-            {% endfor %}
+                {% endfor %}
 
-        </select>
-
-        <br><br>
+            </select>
+        </div>
 
         {% if selected_doctor %}
 
-            <h2>{{ doctor_name }}</h2>
+            <!-- Doctor Information -->
+            <div class="doctor-info">
 
-            <p>Department: {{ department }}</p>
+                <h2>{{ doctor_name }}</h2>
 
-            <p>
-                <strong>Availability:</strong>
+                <p>Department: {{ department }}</p>
 
-                {% if doctor_available == 1 %}
-                    🟢 Available
-                {% else %}
-                    🔴 Unavailable
-                {% endif %}
-            </p>
+                <p>
+                    <strong>Availability:</strong>
 
-            <form action="/toggle_doctor/{{ selected_doctor }}" method="POST">
+                    {% if doctor_available == 1 %}
+                        <span class="available">🟢 Available</span>
+                    {% else %}
+                        <span class="unavailable">🔴 Unavailable</span>
+                    {% endif %}
+                </p>
 
-                {% if doctor_available == 1 %}
+                <form action="/toggle_doctor/{{ selected_doctor }}"
+                      method="POST">
 
-                    <button type="submit">
-                        Make Doctor Unavailable
-                    </button>
+                    {% if doctor_available == 1 %}
 
-                {% else %}
+                        <button type="submit">
+                            Make Doctor Unavailable
+                        </button>
 
-                    <button type="submit">
-                        Make Doctor Available
-                    </button>
+                    {% else %}
 
-                {% endif %}
+                        <button type="submit">
+                            Make Doctor Available
+                        </button>
 
-            </form>
+                    {% endif %}
+
+                </form>
+
+            </div>
 
             <hr>
 
-            <!-- QUEUE STATISTICS -->
+            <!-- Queue Statistics -->
+            <h2>Queue Statistics</h2>
 
-            <h2>📊 Queue Statistics</h2>
+            <div class="stats-container">
 
-            <div style="
-                display: flex;
-                justify-content: center;
-                gap: 20px;
-                flex-wrap: wrap;
-                margin: 20px;
-            ">
-
-                <div style="
-                    border: 2px solid #3498db;
-                    padding: 20px;
-                    min-width: 150px;
-                ">
-
+                <div class="stat-card total-card">
                     <h3>Total Patients</h3>
-
-                    <h2>
-                        {{ total_patients }}
-                    </h2>
-
+                    <h2>{{ total_patients }}</h2>
                 </div>
 
-
-                <div style="
-                    border: 2px solid #f39c12;
-                    padding: 20px;
-                    min-width: 150px;
-                ">
-
+                <div class="stat-card waiting-card">
                     <h3>Waiting</h3>
-
-                    <h2>
-                        {{ waiting_patients }}
-                    </h2>
-
+                    <h2>{{ waiting_patients }}</h2>
                 </div>
 
-
-                <div style="
-                    border: 2px solid #27ae60;
-                    padding: 20px;
-                    min-width: 150px;
-                ">
-
+                <div class="stat-card completed-card">
                     <h3>Completed</h3>
-
-                    <h2>
-                        {{ completed_patients }}
-                    </h2>
-
+                    <h2>{{ completed_patients }}</h2>
                 </div>
 
-
-                <div style="
-                    border: 2px solid #e74c3c;
-                    padding: 20px;
-                    min-width: 150px;
-                ">
-
+                <div class="stat-card emergency-card">
                     <h3>Emergency</h3>
-
-                    <h2>
-                        {{ emergency_patients }}
-                    </h2>
-
+                    <h2>{{ emergency_patients }}</h2>
                 </div>
 
             </div>
 
             <hr>
 
-        {% if current_patient %}
+            <!-- Current Patient -->
+            <h2>Current Patient</h2>
 
-    <div style="margin: 20px; padding: 20px; border: 2px solid #3498db;">
+            {% if current_patient %}
 
-        <h2>Current Patient</h2>
+                <div class="current-patient">
 
-        <h1>Token {{ current_patient["token_number"] }}</h1>
+                    <h1>Token {{ current_patient["token_number"] }}</h1>
 
-        <h3>{{ current_patient["patient_name"] }}</h3>
+                    <h3>{{ current_patient["patient_name"] }}</h3>
 
-        <p>Status: {{ current_patient["status"] }}</p>
+                    <p>
+                        Status: <strong>{{ current_patient["status"] }}</strong>
+                    </p>
 
-        {% if current_patient["status"] == "CALLED" %}
+                    {% if current_patient["status"] == "CALLED" %}
 
-            <form action="/start_consultation/{{ selected_doctor }}"
-                  method="POST">
+                        <form action="/start_consultation/{{ selected_doctor }}"
+                              method="POST">
 
-                <button type="submit">
-                    START CONSULTATION
-                </button>
+                            <button type="submit">
+                                START CONSULTATION
+                            </button>
 
-            </form>
+                        </form>
 
-        {% elif current_patient["status"] == "IN_PROGRESS" %}
+                    {% elif current_patient["status"] == "IN_PROGRESS" %}
 
-            <form action="/complete_consultation/{{ selected_doctor }}"
-                  method="POST">
+                        <form action="/complete_consultation/{{ selected_doctor }}"
+                              method="POST">
 
-                <button type="submit">
-                    COMPLETE CONSULTATION
-                </button>
+                            <button type="submit">
+                                COMPLETE CONSULTATION
+                            </button>
 
-            </form>
+                        </form>
 
-        {% endif %}
+                    {% endif %}
 
-    </div>
+                </div>
 
-{% else %}
+            {% else %}
 
-    <p><strong>No current patient.</strong></p>
+                <p><strong>No current patient.</strong></p>
 
-{% endif %}
+            {% endif %}
 
+            <hr>
+
+            <!-- Waiting Queue -->
             <h2>Waiting Queue</h2>
 
             {% if patients %}
 
+                <div class="table-wrapper">
 
+                    <table>
 
-                <table border="1" cellpadding="10" style="margin: auto;">
+                        <tr>
+                            <th>Token</th>
+                            <th>Patient Name</th>
+                            <th>Status</th>
+                            <th>Patient Type</th>
+                            <th>Approx. Waiting Time</th>
+                        </tr>
 
-                    <tr>
-                        <th>Token</th>
-                        <th>Patient Name</th>
-                        <th>Status</th>
-                        <th>Type</th>
-                        <th>Waiting Time</th>
-                        <th>Approx. Waiting Time</th>
-                    </tr>
+                        {% for patient in patients %}
 
-                    {% for patient in patients %}
+                            <tr>
 
-                    <tr>
-                        <td>{{ patient["token_number"] }}</td>
-                        <td>{{ patient["patient_name"] }}</td>
-                        <td>{{ patient["status"] }}</td>
+                                <td>{{ patient["token_number"] }}</td>
 
-                        <td>
-                            {% if patient["emergency"] == 1 %}
-                                🚨 EMERGENCY
-                            {% else %}
-                                Normal
-                            {% endif %}
-                        </td>
+                                <td>{{ patient["patient_name"] }}</td>
 
-                        <td>
-                            {{ patient["waiting_time"] }} minutes
-                        </td>
-                        
-                    </tr>
+                                <td>{{ patient["status"] }}</td>
 
-                    {% endfor %}
+                                <td>
+                                    {% if patient["emergency"] == 1 %}
+                                        🚨 EMERGENCY
+                                    {% else %}
+                                        Normal
+                                    {% endif %}
+                                </td>
 
-                </table>
+                                <td>
+                                    {{ patient["waiting_time"] }} minutes
+                                </td>
 
-                <br>
+                            </tr>
 
-                    <form action="/call_next/{{ selected_doctor }}" method="POST">
+                        {% endfor %}
 
-                        <button type="submit">
-                            CALL NEXT PATIENT
-                        </button>
+                    </table>
 
-                    </form>
+                </div>
+
+                <form action="/call_next/{{ selected_doctor }}"
+                      method="POST"
+                      class="call-next-form">
+
+                    <button type="submit">
+                        CALL NEXT PATIENT
+                    </button>
+
+                </form>
 
             {% else %}
 
@@ -272,9 +254,7 @@
 
     </div>
 
-
     <script>
-
         function selectDoctor() {
 
             const doctorId = document.getElementById("doctor").value;
@@ -284,9 +264,7 @@
             }
 
         }
-
     </script>
 
 </body>
-
 </html>

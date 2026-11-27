@@ -1,98 +1,80 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>Live Queue Display</title>
+    <title>Hospital OPD Live Queue</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
 
-    <!-- Automatically refresh page every 5 seconds -->
+    <!-- Refresh every 5 seconds -->
     <meta http-equiv="refresh" content="5">
-
 </head>
-
 
 <body>
 
-    <div class="container">
+    <div class="container live-container">
+
+        <p class="live-label">HOSPITAL MANAGEMENT SYSTEM</p>
 
         <h1>Hospital OPD Live Queue</h1>
+
+        <p>Real-Time Patient Queue Information</p>
 
         <hr>
 
         <!-- Doctor Selection -->
+        <div class="live-doctor-selection">
 
-        <label for="doctor">
-            <strong>Select Doctor:</strong>
-        </label>
+            <label for="doctor">Select Doctor</label>
 
-        <br><br>
+            <select id="doctor" onchange="selectDoctor()">
 
-        <select id="doctor"
-                onchange="selectDoctor()">
+                <option value="">-- Select Doctor --</option>
 
-            <option value="">
-                -- Select Doctor --
-            </option>
+                {% for doctor in doctors %}
 
-            {% for doctor in doctors %}
+                    <option value="{{ doctor['id'] }}"
+                        {% if selected_doctor == doctor['id'] %}
+                            selected
+                        {% endif %}>
 
-                <option value="{{ doctor['id'] }}"
-                
-                {% if selected_doctor == doctor['id'] %}
-                    selected
-                {% endif %}
-                
-                >
+                        {{ doctor['name'] }} - {{ doctor['department'] }}
 
-                    {{ doctor['name'] }}
-                    -
-                    {{ doctor['department'] }}
+                    </option>
 
-                </option>
+                {% endfor %}
 
-            {% endfor %}
+            </select>
 
-        </select>
-
+        </div>
 
         {% if selected_doctor %}
 
-            <br><br>
+            <div class="live-doctor-info">
 
-            <h2>
-                {{ doctor_name }}
-            </h2>
+                <h2>{{ doctor_name }}</h2>
 
-            <p>
-                Department: {{ department }}
-            </p>
+                <p>Department: {{ department }}</p>
+
+            </div>
 
             <hr>
 
-
-            <!-- CURRENT PATIENT -->
-
-            <h2>🔔 Now Serving</h2>
+            <!-- Current Patient -->
+            <h2>🔔 NOW SERVING</h2>
 
             {% if current_patient %}
 
-                <div style="
-                    border: 3px solid #3498db;
-                    padding: 30px;
-                    margin: 20px auto;
-                    max-width: 500px;
-                ">
+                <div class="live-current-patient">
+
+                    <p class="token-label">CURRENT TOKEN NUMBER</p>
 
                     <h1>
-                        Token
                         {{ current_patient["token_number"] }}
                     </h1>
 
@@ -102,28 +84,27 @@
 
                     {% if current_patient["emergency"] == 1 %}
 
-                        <h3>
-                            🚨 EMERGENCY
-                        </h3>
+                        <p class="emergency-label">
+                            🚨 EMERGENCY PATIENT
+                        </p>
 
                     {% else %}
 
-                        <h3>
+                        <p class="normal-label">
                             Normal Patient
-                        </h3>
+                        </p>
 
                     {% endif %}
 
-
                     {% if current_patient["status"] == "CALLED" %}
 
-                        <p>
+                        <p class="called-status">
                             📢 Patient Called
                         </p>
 
                     {% elif current_patient["status"] == "IN_PROGRESS" %}
 
-                        <p>
+                        <p class="progress-status">
                             🩺 Consultation In Progress
                         </p>
 
@@ -133,46 +114,88 @@
 
             {% else %}
 
-                <div style="
-                    border: 2px solid #999;
-                    padding: 30px;
-                    margin: 20px auto;
-                    max-width: 500px;
-                ">
+                <div class="no-current-patient">
 
-                    <h2>
-                        No patient is currently being served.
-                    </h2>
+                    <h2>No Patient Currently Being Served</h2>
 
-                    <p>
-                        Please wait for the next patient.
-                    </p>
+                    <p>Please wait for the next patient.</p>
 
                 </div>
 
             {% endif %}
 
+            <hr>
+
+            <!-- Waiting Queue -->
+            <h2>📋 Waiting Queue</h2>
+
+            {% if waiting_patients %}
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Position</th>
+                                <th>Token Number</th>
+                                <th>Patient Name</th>
+                                <th>Patient Type</th>
+                                <th>Status</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for patient in waiting_patients %}
+
+                                <tr>
+
+                                    <td>{{ loop.index }}</td>
+
+                                    <td>{{ patient["token_number"] }}</td>
+
+                                    <td>{{ patient["patient_name"] }}</td>
+
+                                    <td>
+                                        {% if patient["emergency"] == 1 %}
+                                            🚨 EMERGENCY
+                                        {% else %}
+                                            Normal
+                                        {% endif %}
+                                    </td>
+
+                                    <td>{{ patient["status"] }}</td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <p>No patients are waiting in the queue.</p>
+
+            {% endif %}
 
             <hr>
 
-
-            <!-- AUTO REFRESH MESSAGE -->
-
-            <p>
+            <p class="refresh-message">
                 🔄 Queue updates automatically every 5 seconds.
             </p>
 
-
         {% else %}
 
-            <br><br>
-
-            <h2>
-                Please select a doctor to view the live queue.
-            </h2>
+            <h2>Please select a doctor to view the live queue.</h2>
 
         {% endif %}
-
 
         <br>
 
@@ -180,29 +203,21 @@
             Back to Home
         </button>
 
-
     </div>
-
 
     <script>
 
         function selectDoctor() {
 
-            const doctorId =
-                document.getElementById("doctor").value;
+            const doctorId = document.getElementById("doctor").value;
 
             if (doctorId) {
-
-                window.location.href =
-                    "/live_queue/" + doctorId;
-
+                window.location.href = "/live_queue/" + doctorId;
             }
 
         }
 
     </script>
 
-
 </body>
-
 </html>

@@ -1,43 +1,513 @@
+
+/* General Page Styling */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
+    background: #f4f7fb;
     margin: 0;
     padding: 0;
-}
-
-.container {
-    width: 80%;
-    margin: 100px auto;
-    text-align: center;
-    background-color: white;
-    padding: 40px;
-    border-radius: 10px;
-}
-
-h1 {
     color: #2c3e50;
 }
 
-p {
-    color: #555;
-    font-size: 18px;
+/* Main Container */
+.container {
+    width: 85%;
+    max-width: 1100px;
+    margin: 80px auto;
+    text-align: center;
+    background: white;
+    padding: 50px 40px;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
+/* Headings */
+h1 {
+    color: #174a7e;
+    font-size: 32px;
+    margin-bottom: 15px;
+}
+
+h2 {
+    color: #174a7e;
+}
+
+p {
+    color: #64748b;
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+/* Buttons */
 .buttons {
-    margin-top: 30px;
+    margin-top: 35px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 button {
-    padding: 12px 25px;
-    margin: 10px;
+    padding: 13px 25px;
     border: none;
-    border-radius: 5px;
-    background-color: #3498db;
+    border-radius: 8px;
+    background: #1976d2;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: bold;
     cursor: pointer;
+    transition: 0.3s;
 }
 
 button:hover {
-    background-color: #2980b9;
+    background: #125ca5;
+    transform: translateY(-2px);
+}
+
+/* Forms and Input Fields */
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0 15px;
+    border: 1px solid #d5deea;
+    border-radius: 7px;
+    font-size: 15px;
+    background: #fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+
+th {
+    background: #eaf3fc;
+    color: #174a7e;
+    padding: 13px;
+    text-align: center;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e8edf3;
+    text-align: center;
+}
+
+tr:hover td {
+    background: #f8fbff;
+}
+
+/* Links */
+a {
+    color: #1976d2;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        width: 94%;
+        margin: 30px auto;
+        padding: 30px 18px;
+    }
+
+    h1 {
+        font-size: 25px;
+    }
+
+    .buttons {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    table {
+        font-size: 13px;
+    }
+}
+
+
+input,
+select,
+textarea {
+    width: 100%;
+    max-width: 650px;
+    display: block;
+    padding: 12px;
+    margin: 8px auto 25px;
+    border: 1px solid #d5deea;
+    border-radius: 7px;
+    font-size: 15px;
+    background: #fff;
+}
+
+
+/* Form Layout */
+.container form {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+input,
+select,
+textarea {
+    display: block;
+    width: 100%;
+    max-width: 550px;
+    padding: 11px;
+    margin: 8px auto 16px;
+    border: 1px solid #d5deea;
+    border-radius: 7px;
+    font-size: 16px;
+    background: white;
+}
+
+.container form label {
+    display: block;
+    margin: 14px 0 5px;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+
+
+/* Reception Registration Form */
+.registration-form {
+    width: 100%;
+    max-width: 650px;
+    margin: 25px auto;
+}
+
+.form-group {
+    margin-bottom: 18px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.registration-form input,
+.registration-form select {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 12px;
+    font-size: 15px;
+}
+
+.registration-form button {
+    margin-top: 10px;
+}
+
+/* Reassignment Table */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.reassignment-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.reassignment-form select {
+    width: 180px;
+    margin: 0;
+}
+
+.reassignment-form button {
+    margin: 0;
+    white-space: nowrap;
+}
+
+
+/* Doctor Dashboard */
+.doctor-container {
+    max-width: 1100px;
+    margin: 45px auto;
+}
+
+.doctor-selection {
+    max-width: 550px;
+    margin: 25px auto;
+}
+
+.doctor-selection label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.doctor-selection select {
+    max-width: 100%;
+    margin: 0;
+}
+
+.doctor-info {
+    background: #f4f8fd;
+    border: 1px solid #dce8f5;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 25px auto;
+    max-width: 650px;
+}
+
+.available {
+    color: #16834a;
+    font-weight: bold;
+}
+
+.unavailable {
+    color: #d93030;
+    font-weight: bold;
+}
+
+/* Statistics Cards */
+.stats-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 25px 0;
+}
+
+.stat-card {
+    flex: 1 1 180px;
+    max-width: 220px;
+    padding: 20px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.stat-card h3 {
+    font-size: 16px;
+    color: #64748b;
+}
+
+.stat-card h2 {
+    font-size: 30px;
+    margin-bottom: 5px;
+}
+
+.total-card {
+    border-top: 4px solid #1976d2;
+}
+
+.waiting-card {
+    border-top: 4px solid #f39c12;
+}
+
+.completed-card {
+    border-top: 4px solid #27ae60;
+}
+
+.emergency-card {
+    border-top: 4px solid #e74c3c;
+}
+
+/* Current Patient */
+.current-patient {
+    max-width: 600px;
+    margin: 25px auto;
+    padding: 25px;
+    border: 2px solid #1976d2;
+    border-radius: 12px;
+    background: #f4f9ff;
+}
+
+.current-patient h1 {
+    color: #1976d2;
+    font-size: 30px;
+}
+
+.current-patient h3 {
+    font-size: 21px;
+}
+
+/* Call Next Button */
+.call-next-form {
+    margin: 25px auto;
+}
+
+/* Doctor Dashboard Responsive */
+@media (max-width: 768px) {
+    .doctor-container {
+        width: 94%;
+        padding: 25px 15px;
+    }
+
+    .stats-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-card {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .table-wrapper table {
+        min-width: 650px;
+    }
+}
+
+
+
+/* Live Queue Display */
+.live-container {
+    max-width: 1150px;
+    margin: 40px auto;
+}
+
+.live-label {
+    color: #1976d2;
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 13px;
+}
+
+.live-doctor-selection {
+    max-width: 500px;
+    margin: 25px auto;
+}
+
+.live-doctor-selection label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.live-doctor-selection select {
+    max-width: 100%;
+    margin: 0;
+}
+
+.live-doctor-info {
+    margin: 25px auto;
+}
+
+/* Current Patient Display */
+.live-current-patient {
+    max-width: 650px;
+    margin: 25px auto;
+    padding: 30px;
+    background: #edf6ff;
+    border: 3px solid #1976d2;
+    border-radius: 15px;
+}
+
+.token-label {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #64748b;
+}
+
+.live-current-patient h1 {
+    font-size: 75px;
+    color: #1976d2;
+    margin: 15px 0;
+}
+
+.live-current-patient h2 {
+    font-size: 28px;
+}
+
+.emergency-label {
+    color: #d93030;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.normal-label {
+    color: #16834a;
+    font-weight: bold;
+}
+
+.called-status {
+    color: #1976d2;
+    font-weight: bold;
+}
+
+.progress-status {
+    color: #16834a;
+    font-weight: bold;
+}
+
+/* No Current Patient */
+.no-current-patient {
+    max-width: 650px;
+    margin: 25px auto;
+    padding: 30px;
+    background: #f5f7fa;
+    border: 1px solid #dce3eb;
+    border-radius: 12px;
+}
+
+/* Refresh Message */
+.refresh-message {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Live Display Responsive */
+@media (max-width: 768px) {
+    .live-container {
+        width: 94%;
+        padding: 25px 15px;
+    }
+
+    .live-current-patient h1 {
+        font-size: 55px;
+    }
+
+    .live-current-patient h2 {
+        font-size: 22px;
+    }
+
+    .table-wrapper table {
+        min-width: 650px;
+    }
+}
+
+.flash-message {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ffeeba;
+    border-radius: 5px;
+    text-align: center;
 }

@@ -68,20 +68,42 @@ def create_tables():
     # Add original_doctor_id column if it does not exist
     # -----------------------------------------------------
 
-    cursor.execute("""
-        PRAGMA table_info(tokens)
-    """)
+    
+    # Check existing token table columns
+    cursor.execute("PRAGMA table_info(tokens)")
 
-    columns = cursor.fetchall()
+    columns = [column[1] for column in cursor.fetchall()]
 
-    column_names = [column["name"] for column in columns]
-
-    if "original_doctor_id" not in column_names:
+    # Add original_doctor_id if it does not exist
+    if "original_doctor_id" not in columns:
 
         cursor.execute("""
             ALTER TABLE tokens
             ADD COLUMN original_doctor_id INTEGER
         """)
+
+    # Add original_token_number if it does not exist
+    if "original_token_number" not in columns:
+
+        cursor.execute("""
+            ALTER TABLE tokens
+            ADD COLUMN original_token_number INTEGER
+        """)
+
+    # Preserve original doctor for existing tokens
+    cursor.execute("""
+        UPDATE tokens
+        SET original_doctor_id = doctor_id
+        WHERE original_doctor_id IS NULL
+    """)
+
+    # Preserve original token number for existing tokens
+    cursor.execute("""
+        UPDATE tokens
+        SET original_token_number = token_number
+        WHERE original_token_number IS NULL
+    """)
+
 
     # -----------------------------------------------------
     # Fill original doctor for existing tokens

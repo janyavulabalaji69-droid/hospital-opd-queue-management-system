@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,210 +14,171 @@
 
 <body>
 
+    <!-- Flash Messages -->
+   {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash-message">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
     <div class="container">
 
         <h1>Reception Dashboard</h1>
 
         <p>Register Patient and Generate Token</p>
 
-        <form action="/add_patient" method="POST">
+        <!-- Patient Registration Form -->
+        <form action="/add_patient" method="POST" class="registration-form">
 
-            <!-- Patient Name -->
-            <label>Patient Name</label>
-            <br>
+            <div class="form-group">
+                <label>Patient Name</label>
+                <input type="text"
+                       name="name"
+                       placeholder="Enter patient name"
+                       maxlength="100"
+                       required>
+            </div>
 
-            <input
-                type="text"
-                name="name"
-                placeholder="Enter patient name"
-                required
-            >
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number"
+                       name="age"
+                       placeholder="Enter age"
+                       min="1"
+                       max="120"
+                       required>
+            </div>
 
-            <br><br>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel"
+                       name="phone"
+                       placeholder="Enter 10-digit phone number"
+                       pattern="[0-9]{10}"
+                       maxlength="10"
+                       required>
+            </div>
 
+            <div class="form-group">
+                <label>Select Doctor</label>
+                <select name="doctor" required>
 
-            <!-- Age -->
-            <label>Age</label>
-            <br>
+                    <option value="">Select Doctor</option>
 
-            <input
-                type="number"
-                name="age"
-                placeholder="Enter age"
-                required
-            >
+                    {% for doctor in doctors %}
+                        {% if doctor["available"] == 1 %}
+                            <option value="{{ doctor['id'] }}">
+                                {{ doctor['name'] }} -
+                                {{ doctor['department'] }} -
+                                Available
+                            </option>
+                        {% else %}
+                            <option value="{{ doctor['id'] }}" disabled>
+                                {{ doctor['name'] }} -
+                                {{ doctor['department'] }} -
+                                Unavailable
+                            </option>
+                        {% endif %}
+                    {% endfor %}
 
-            <br><br>
+                </select>
+            </div>
 
+            <div class="form-group">
+                <label>Patient Type</label>
 
-            <!-- Phone -->
-            <label>Phone Number</label>
-            <br>
+                <select name="emergency" required>
+                    <option value="0">Normal</option>
+                    <option value="1">Emergency</option>
+                </select>
+            </div>
 
-            <input
-                type="text"
-                name="phone"
-                placeholder="Enter phone number"
-                required
-            >
-
-            <br><br>
-
-
-            <!-- Doctor -->
-            <label>Select Doctor</label>
-            <br>
-
-            <select name="doctor" required>
-
-                <option value="">Select Doctor</option>
-
-                {% for doctor in doctors %}
-
-                    {% if doctor["available"] == 1 %}
-
-                        <option value="{{ doctor['id'] }}">
-                            {{ doctor['name'] }} - {{ doctor['department'] }} - 🟢 Available
-                        </option>
-
-                    {% else %}
-
-                        <option value="{{ doctor['id'] }}" disabled>
-                            {{ doctor['name'] }} - {{ doctor['department'] }} - 🔴 Unavailable
-                        </option>
-
-                    {% endif %}
-
-                {% endfor %}
-
-            </select>
-
-            <br><br>
-
-
-            <!-- Patient Type -->
-            <label>Patient Type</label>
-            <br>
-
-            <select name="emergency" required>
-
-                <option value="0">
-                    Normal
-                </option>
-
-                <option value="1">
-                    🚨 Emergency
-                </option>
-
-            </select>
-
-            <br><br>
-
-
-            <!-- Generate Token -->
-            <button type="submit">
-                Generate Token
-            </button>
+            <button type="submit">Generate Token</button>
 
         </form>
 
-        <!-- Patient Reassignment Section -->
-
         <hr>
 
+        <!-- Patient Reassignment Section -->
         <h2>Patients Needing Reassignment</h2>
 
         {% if reassignment_patients %}
 
-            <table border="1" cellpadding="10" style="margin: auto;">
+            <div class="table-wrapper">
 
-                <tr>
-                    <th>Token</th>
-                    <th>Patient Name</th>
-                    <th>Current Doctor</th>
-                    <th>Department</th>
-                    <th>Reassign To</th>
-                    <th>Action</th>
-                </tr>
+                <table>
 
-                {% for patient in reassignment_patients %}
+                    <tr>
+                        <th>Token</th>
+                        <th>Patient Name</th>
+                        <th>Current Doctor</th>
+                        <th>Department</th>
+                        <th>Reassign To</th>
+                    </tr>
 
-                <tr>
+                    {% for patient in reassignment_patients %}
 
-                    <td>
-                        {{ patient["token_number"] }}
-                    </td>
+                        <tr>
 
-                    <td>
-                        {{ patient["patient_name"] }}
-                    </td>
+                            <td>{{ patient["token_number"] }}</td>
 
-                    <td>
-                        {{ patient["doctor_name"] }}
-                    </td>
+                            <td>{{ patient["patient_name"] }}</td>
 
-                    <td>
-                        {{ patient["department"] }}
-                    </td>
+                            <td>{{ patient["doctor_name"] }}</td>
 
-                    <td>
+                            <td>{{ patient["department"] }}</td>
 
-                        <form
-                            action="/reassign_patient/{{ patient['id'] }}"
-                            method="POST"
-                        >
+                            <td>
 
-                            <select name="new_doctor" required>
+                                <form
+                                    action="/reassign_patient/{{ patient['id'] }}"
+                                    method="POST"
+                                    class="reassignment-form">
 
-                                <option value="">
-                                    Select Doctor
-                                </option>
+                                    <select name="new_doctor" required>
 
-                                {% for doctor in doctors %}
-
-                                    {% if doctor["available"] == 1 %}
-
-                                        <option value="{{ doctor['id'] }}">
-
-                                            {{ doctor['name'] }}
-                                            -
-                                            {{ doctor['department'] }}
-
+                                        <option value="">
+                                            Select Doctor
                                         </option>
 
-                                    {% endif %}
+                                        {% for doctor in doctors %}
 
-                                {% endfor %}
+                                            {% if doctor["available"] == 1 %}
 
-                            </select>
+                                                <option value="{{ doctor['id'] }}">
+                                                    {{ doctor['name'] }} -
+                                                    {{ doctor['department'] }}
+                                                </option>
 
-                    </td>
+                                            {% endif %}
 
-                    <td>
+                                        {% endfor %}
 
-                            <button type="submit">
-                                Reassign Patient
-                            </button>
+                                    </select>
 
-                        </form>
+                                    <button type="submit">
+                                        Reassign Patient
+                                    </button>
 
-                    </td>
+                                </form>
 
-                </tr>
+                            </td>
 
-                {% endfor %}
+                        </tr>
 
-            </table>
+                    {% endfor %}
+
+                </table>
+
+            </div>
 
         {% else %}
 
-            <p>
-                No patients need reassignment.
-            </p>
+            <p>No patients need reassignment.</p>
 
         {% endif %}
-
-        <br>
 
         <br>
 
@@ -228,5 +190,4 @@
     </div>
 
 </body>
-
 </html>

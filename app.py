@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 from database import create_tables, get_connection
 
 app = Flask(__name__)
+
+app.secret_key = "opd-project-secret-key"
 
 # Create database tables
 create_tables()
@@ -85,204 +87,140 @@ def reception():
 # ADD PATIENT + GENERATE TOKEN
 # ---------------------------------------------------------
 
+
 @app.route("/add_patient", methods=["POST"])
 def add_patient():
 
-    # Get patient information
-    name = request.form["name"]
-    age = request.form["age"]
-    phone = request.form["phone"]
+    name = request.form.get("name", "").strip()
+    age = request.form.get("age", "").strip()
+    phone = request.form.get("phone", "").strip()
+    doctor_id = request.form.get("doctor", "").strip()
+    emergency = request.form.get("emergency", "").strip()
 
-    # Get selected doctor
-    doctor_id = request.form["doctor"]
+    # Validate patient name
+    if not name or len(name) > 100:
+        flash("Please enter a valid patient name.", "warning")
+        return redirect("/reception")
 
-    # Get patient type
-    # 0 = Normal
-    # 1 = Emergency
-    emergency = request.form["emergency"]
+    # Validate age
+    if not age.isdigit() or not (1 <= int(age) <= 120):
+        flash("Age must be between 1 and 120.", "warning")
+        return redirect("/reception")
 
-    # -----------------------------------------------------
-    # CONNECT TO DATABASE
-    # -----------------------------------------------------
+    # Validate phone number
+    if not phone.isdigit() or len(phone) != 10:
+        flash("Phone number must contain exactly 10 digits.", "warning")
+        return redirect("/reception")
+
+    # Validate doctor selection
+    if not doctor_id.isdigit():
+        flash("Please select a valid doctor.", "warning")
+        return redirect("/reception")
+
+    # Validate patient type
+    if emergency not in ("0", "1"):
+        flash("Please select a valid patient type.", "warning")
+        return redirect("/reception")
 
     connection = get_connection()
     cursor = connection.cursor()
 
-    # -----------------------------------------------------
-    # CHECK IF SELECTED DOCTOR IS AVAILABLE
-    # -----------------------------------------------------
+    try:
+        # Check doctor availability
+        cursor.execute("""
+            SELECT name, available
+            FROM doctors
+            WHERE id = ?
+        """, (int(doctor_id),))
 
-    cursor.execute("""
-        SELECT name, available
-        FROM doctors
-        WHERE id = ?
-    """, (doctor_id,))
+        doctor = cursor.fetchone()
 
-    doctor = cursor.fetchone()
+        if doctor is None or doctor["available"] == 0:
+            connection.close()
+            flash("Selected doctor is unavailable. Please choose another.", "warning")
+            return redirect("/reception")
 
-    if doctor is None:
+        # Insert patient
+        cursor.execute("""
+            INSERT INTO patients (name, age, phone)
+            VALUES (?, ?, ?)
+        """, (name, int(age), phone))
 
+        patient_id = cursor.lastrowid
+
+        # Generate next token
+        cursor.execute("""
+            SELECT MAX(token_number)
+            FROM tokens
+            WHERE doctor_id = ?
+        """, (int(doctor_id),))
+
+        result = cursor.fetchone()
+        token_number = 1 if result[0] is None else result[0] + 1
+
+        # Insert token
+        cursor.execute("""
+            INSERT INTO tokens (
+                token_number,
+                patient_id,
+                doctor_id,
+                status,
+                emergency,
+                original_doctor_id,
+                original_token_number
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            token_number,
+            patient_id,
+            int(doctor_id),
+            "WAITING",
+            int(emergency),
+            int(doctor_id),
+            token_number
+        ))
+
+        connection.commit()
+
+    except Exception:
+        connection.rollback()
         connection.close()
+        app.logger.exception("Patient registration failed")
+        flash("Registration failed due to a database error. Please try again.", "warning")
+        return redirect("/reception")
 
-        return "Doctor not found"
+    connection.close()
 
-    if doctor["available"] == 0:
+    patient_type = "🚨 EMERGENCY" if emergency == "1" else "Normal"
 
-        connection.close()
-
-        return """
-            <div style="
-                text-align:center;
-                margin-top:100px;
-                font-family:Arial;
-            ">
-
-                <h2>Doctor is currently unavailable.</h2>
-
-                <p>Please select another doctor.</p>
-
-                <br>
+    return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Token Generated</title>
+            <link rel="stylesheet"
+                  href="/static/css/style.css">
+        </head>
+        <body>
+            <div class="container">
+                <h1>Token Generated Successfully!</h1>
+                <h2>Token Number: {token_number}</h2>
+                <p>Patient: {name}</p>
+                <p>Patient Type: {patient_type}</p>
+                <p>Status: WAITING</p>
 
                 <button onclick="window.location.href='/reception'">
                     Back to Reception
                 </button>
 
-                &nbsp;&nbsp;
-
                 <button onclick="window.location.href='/'">
                     Back to Home
                 </button>
-
             </div>
-        """
-
-    # -----------------------------------------------------
-    # ADD PATIENT TO PATIENTS TABLE
-    # -----------------------------------------------------
-
-    cursor.execute("""
-        INSERT INTO patients (name, age, phone)
-        VALUES (?, ?, ?)
-    """, (name, age, phone))
-
-    patient_id = cursor.lastrowid
-
-    # -----------------------------------------------------
-    # GENERATE NEXT TOKEN NUMBER
-    # -----------------------------------------------------
-
-    cursor.execute("""
-        SELECT MAX(token_number)
-        FROM tokens
-        WHERE doctor_id = ?
-    """, (doctor_id,))
-
-    result = cursor.fetchone()
-
-    if result[0] is None:
-
-        token_number = 1
-
-    else:
-
-        token_number = result[0] + 1
-
-    # -----------------------------------------------------
-    # ADD TOKEN
-    # -----------------------------------------------------
-
-    cursor.execute("""
-        INSERT INTO tokens
-        (
-            token_number,
-            patient_id,
-            doctor_id,
-            status,
-            emergency,
-            original_doctor_id
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        token_number,
-        patient_id,
-        doctor_id,
-        "WAITING",
-        emergency,
-        doctor_id
-    ))
-
-    connection.commit()
-    connection.close()
-
-    # -----------------------------------------------------
-    # SHOW PATIENT TYPE
-    # -----------------------------------------------------
-
-    if emergency == "1":
-
-        patient_type = "🚨 EMERGENCY"
-
-    else:
-
-        patient_type = "Normal"
-
-    # -----------------------------------------------------
-    # SHOW TOKEN RESULT
-    # -----------------------------------------------------
-
-    return f"""
-        <!DOCTYPE html>
-
-        <html>
-
-        <head>
-
-            <title>Token Generated</title>
-
-        </head>
-
-        <body>
-
-            <div style="
-                text-align:center;
-                margin-top:100px;
-                font-family:Arial;
-            ">
-
-                <h1>Token Generated Successfully!</h1>
-
-                <h2>Token Number: {token_number}</h2>
-
-                <p>Patient: {name}</p>
-
-                <p>Patient Type: {patient_type}</p>
-
-                <p>Status: WAITING</p>
-
-                <br>
-
-                <button
-                    onclick="window.location.href='/reception'">
-
-                    Back to Reception
-
-                </button>
-
-                &nbsp;&nbsp;
-
-                <button
-                    onclick="window.location.href='/'">
-
-                    Back to Home
-
-                </button>
-
-            </div>
-
         </body>
-
         </html>
     """
+
 
 
 # ---------------------------------------------------------
@@ -401,19 +339,31 @@ def doctor_dashboard(doctor_id):
     # CALCULATE WAITING TIME
     # -----------------------------------------------------
 
+    
+# CALCULATE WAITING TIME
+
     patients_with_waiting_time = []
+
+    # Check whether a patient is currently being handled
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM tokens
+        WHERE doctor_id = ?
+        AND status IN ('CALLED', 'IN_PROGRESS')
+    """, (doctor_id,))
+
+    active_patient = cursor.fetchone()[0]
 
     for position, patient in enumerate(patients):
 
         patient_data = dict(patient)
 
         patient_data["waiting_time"] = (
-            calculate_waiting_time(position)
+            (position + active_patient) * AVERAGE_CONSULTATION_TIME
         )
 
-        patients_with_waiting_time.append(
-            patient_data
-        )
+        patients_with_waiting_time.append(patient_data)
+
 
     # -----------------------------------------------------
     # GET CURRENT PATIENT
@@ -534,10 +484,8 @@ def toggle_doctor(doctor_id):
 # REASSIGN PATIENT TO ANOTHER DOCTOR
 # ---------------------------------------------------------
 
-@app.route(
-    "/reassign_patient/<int:token_id>",
-    methods=["POST"]
-)
+
+@app.route("/reassign_patient/<int:token_id>", methods=["POST"])
 def reassign_patient(token_id):
 
     new_doctor_id = request.form["new_doctor"]
@@ -545,124 +493,82 @@ def reassign_patient(token_id):
     connection = get_connection()
     cursor = connection.cursor()
 
-    # -----------------------------------------------------
-    # CHECK THE TOKEN
-    # -----------------------------------------------------
-
+    # Get token details
     cursor.execute("""
-        SELECT
-            id,
-            token_number,
-            doctor_id,
-            status
-
+        SELECT id, token_number, doctor_id, status
         FROM tokens
-
         WHERE id = ?
     """, (token_id,))
 
     token = cursor.fetchone()
 
     if token is None:
-
         connection.close()
-
         return "Token not found"
 
-    # -----------------------------------------------------
-    # ONLY WAITING PATIENTS CAN BE REASSIGNED
-    # -----------------------------------------------------
-
     if token["status"] != "WAITING":
-
         connection.close()
+        return "Only waiting patients can be reassigned."
 
-        return """
-            <h2>Only waiting patients can be reassigned.</h2>
-
-            <br>
-
-            <button onclick="window.location.href='/reception'">
-                Back to Reception
-            </button>
-        """
-
-    # -----------------------------------------------------
-    # CHECK NEW DOCTOR
-    # -----------------------------------------------------
-
+    # Check new doctor
     cursor.execute("""
-        SELECT
-            id,
-            name,
-            available
-
+        SELECT id, available
         FROM doctors
-
         WHERE id = ?
     """, (new_doctor_id,))
 
     new_doctor = cursor.fetchone()
 
-    if new_doctor is None:
-
+    if new_doctor is None or new_doctor["available"] == 0:
         connection.close()
+        return "Selected doctor is unavailable or does not exist."
 
-        return "Doctor not found"
-
-    if new_doctor["available"] == 0:
-
+    if token["doctor_id"] == int(new_doctor_id):
         connection.close()
+        return redirect("/reception")
 
-        return """
-            <h2>Selected doctor is unavailable.</h2>
+    # Generate next token number for new doctor
+    cursor.execute("""
+        SELECT MAX(token_number)
+        FROM tokens
+        WHERE doctor_id = ?
+    """, (new_doctor_id,))
 
-            <br>
+    result = cursor.fetchone()
 
-            <button onclick="window.location.href='/reception'">
-                Back to Reception
-            </button>
-        """
+    if result[0] is None:
+        new_token_number = 1
+    else:
+        new_token_number = result[0] + 1
 
-    # -----------------------------------------------------
-    # REASSIGN PATIENT
-    #
-    # Token number DOES NOT change.
-    # -----------------------------------------------------
-
+    # Reassign patient and update queue token
+    # Original token number remains unchanged
     cursor.execute("""
         UPDATE tokens
-
-        SET doctor_id = ?
-
+        SET doctor_id = ?,
+            token_number = ?
         WHERE id = ?
-    """, (new_doctor_id, token_id))
+    """, (new_doctor_id, new_token_number, token_id))
 
     connection.commit()
     connection.close()
 
     return """
         <h2>Patient reassigned successfully!</h2>
-
-        <p>The original token number has been preserved.</p>
-
-        <br>
-
+        <p>New Token Number: """ + str(new_token_number) + """</p>
+        <p>Original token number has been preserved.</p>
         <button onclick="window.location.href='/reception'">
             Back to Reception
         </button>
-
-        &nbsp;&nbsp;
-
-        <button onclick="window.location.href='/'">
-            Back to Home
-        </button>
     """
+
 
 
 # ---------------------------------------------------------
 # CALL NEXT PATIENT
 # ---------------------------------------------------------
+
+
 
 @app.route(
     "/call_next/<int:doctor_id>",
@@ -673,89 +579,75 @@ def call_next(doctor_id):
     connection = get_connection()
     cursor = connection.cursor()
 
-    # -----------------------------------------------------
-    # CHECK IF A PATIENT IS ALREADY BEING HANDLED
-    # -----------------------------------------------------
+    # CHECK DOCTOR AVAILABILITY
+    cursor.execute("""
+        SELECT available
+        FROM doctors
+        WHERE id = ?
+    """, (doctor_id,))
 
+    doctor = cursor.fetchone()
+
+    if doctor is None:
+        connection.close()
+        return "Doctor not found"
+
+    # CHECK IF DOCTOR IS UNAVAILABLE
+    if doctor["available"] == 0:
+
+        connection.close()
+
+        flash(
+            "Doctor is unavailable! Please select an available doctor.",
+            "warning"
+        )
+
+        return redirect(f"/doctor/{doctor_id}")
+
+    # CHECK IF A PATIENT IS ALREADY BEING HANDLED
     cursor.execute("""
         SELECT id
-
         FROM tokens
-
         WHERE doctor_id = ?
-
-        AND status IN
-        ('CALLED', 'IN_PROGRESS')
-
+        AND status IN ('CALLED', 'IN_PROGRESS')
         LIMIT 1
-
     """, (doctor_id,))
 
     current = cursor.fetchone()
 
-    # Don't call another patient while one is active
     if current is not None:
-
         connection.close()
+        return redirect(f"/doctor/{doctor_id}")
 
-        return redirect(
-            f"/doctor/{doctor_id}"
-        )
-
-    # -----------------------------------------------------
     # FIND NEXT PATIENT
-    #
-    # EMERGENCY FIRST
-    # THEN NORMAL FIFO
-    # -----------------------------------------------------
-
     cursor.execute("""
         SELECT id
-
         FROM tokens
-
         WHERE doctor_id = ?
-
         AND status = 'WAITING'
-
-        ORDER BY
-            emergency DESC,
-            token_number ASC
-
+        ORDER BY emergency DESC, token_number ASC
         LIMIT 1
-
     """, (doctor_id,))
 
     token = cursor.fetchone()
 
-    # No waiting patients
     if token is None:
-
         connection.close()
+        return redirect(f"/doctor/{doctor_id}")
 
-        return redirect(
-            f"/doctor/{doctor_id}"
-        )
-
-    # -----------------------------------------------------
     # CHANGE STATUS TO CALLED
-    # -----------------------------------------------------
-
     cursor.execute("""
         UPDATE tokens
-
         SET status = 'CALLED'
-
         WHERE id = ?
-
     """, (token["id"],))
 
     connection.commit()
     connection.close()
 
-    return redirect(
-        f"/doctor/{doctor_id}"
-    )
+    return redirect(f"/doctor/{doctor_id}")
+
+
 
 
 # ---------------------------------------------------------
@@ -852,6 +744,7 @@ def complete_consultation(doctor_id):
 # LIVE QUEUE DISPLAY
 # ---------------------------------------------------------
 
+
 @app.route("/live_queue/<int:doctor_id>")
 def live_queue(doctor_id):
 
@@ -860,89 +753,75 @@ def live_queue(doctor_id):
 
     # Get available doctors
     cursor.execute("""
-        SELECT
-            id,
-            name,
-            department
-
+        SELECT id, name, department
         FROM doctors
-
         WHERE available = 1
-
         ORDER BY id
-
     """)
-
     doctors = cursor.fetchall()
 
     # Get selected doctor
     cursor.execute("""
-        SELECT
-            name,
-            department
-
+        SELECT name, department
         FROM doctors
-
         WHERE id = ?
-
     """, (doctor_id,))
 
     doctor = cursor.fetchone()
 
     if doctor is None:
-
         connection.close()
-
         return "Doctor not found"
 
-    # -----------------------------------------------------
-    # GET CURRENT PATIENT
-    # -----------------------------------------------------
-
+    # Get current patient
     cursor.execute("""
         SELECT
             tokens.token_number,
             patients.name AS patient_name,
             tokens.status,
             tokens.emergency
-
         FROM tokens
-
         JOIN patients
             ON tokens.patient_id = patients.id
-
         WHERE tokens.doctor_id = ?
-
-        AND tokens.status IN
-        ('CALLED', 'IN_PROGRESS')
-
+        AND tokens.status IN ('CALLED', 'IN_PROGRESS')
         ORDER BY tokens.token_number ASC
-
         LIMIT 1
-
     """, (doctor_id,))
 
     current_patient = cursor.fetchone()
 
+    # Get all waiting patients
+    cursor.execute("""
+        SELECT
+            tokens.token_number,
+            patients.name AS patient_name,
+            tokens.status,
+            tokens.emergency
+        FROM tokens
+        JOIN patients
+            ON tokens.patient_id = patients.id
+        WHERE tokens.doctor_id = ?
+        AND tokens.status = 'WAITING'
+        ORDER BY tokens.emergency DESC,
+                 tokens.token_number ASC
+    """, (doctor_id,))
+
+    waiting_patients = cursor.fetchall()
+
     connection.close()
 
-    # -----------------------------------------------------
-    # DISPLAY LIVE QUEUE
-    # -----------------------------------------------------
-
+    # Display live queue
     return render_template(
         "live_display.html",
-
         doctors=doctors,
-
         selected_doctor=doctor_id,
-
         doctor_name=doctor["name"],
-
         department=doctor["department"],
-
-        current_patient=current_patient
+        current_patient=current_patient,
+        waiting_patients=waiting_patients
     )
+
 
 
 # ---------------------------------------------------------
